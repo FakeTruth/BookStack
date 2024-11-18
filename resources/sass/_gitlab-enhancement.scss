@@ -1,0 +1,83 @@
+.gitlab-issue-reference {
+    /* margin: 8px 0; */
+    white-space:nowrap;
+    
+    .gitlab-issue-card {
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        /* padding: 1px 0px; */
+        background: #f8f9fa;
+        
+        .loading-message {
+            color: #666;
+            
+            small {
+                margin-left: 8px;
+                font-size: 0.9em;
+                opacity: 0.8;
+            }
+        }
+        
+        i.fa-gitlab {
+            color: #FC6D26;
+        }
+    }
+
+    .issue-title {
+        /* font-weight: bold; */
+        
+        a {
+            /* color: #333; */
+            text-decoration: none;
+            margin-left: 4px;
+            
+            &:hover {
+                /* text-decoration: underline; */
+            }
+        }
+        
+        &.text-muted {
+            color: #666;
+        }
+    }
+
+    .issue-meta {
+        color: #666;
+        
+        .status {
+            padding: 0px 6px;
+            border-radius: 20px;
+            
+            &.opened {
+                background: #2da160;
+                color: white;
+            }
+            
+            &.closed {
+                background: #cf3636;
+                color: white;
+            }
+
+            .status-text {
+                $font-size: 0.8em;
+                font-size: $font-size;
+                position: relative;
+                top: math.div(1 - $font-size, -2);
+            }
+        }
+    }
+}
+
+// Dark mode support
+.dark-mode {
+    .gitlab-issue-reference {
+        .gitlab-issue-card {
+            background: #2d3133;
+            border-color: #444;
+            
+            .issue-title a {
+                /* color: #fff; */
+            }
+        }
+    }
+} 
