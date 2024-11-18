@@ -46,16 +46,16 @@ export class GitLabService {
         }
     }
 
-    fetchIssueFromCache(projectId, issueId) {
-        const cacheKey = `${projectId}/${issueId}`;
+    fetchIssueFromCache(groupId, projectId, issueId) {
+        const cacheKey = `${groupId}/${projectId}/${issueId}`;
         
         // Return cached issue if available
         const cachedIssue = this.cache.get(cacheKey);
         return cachedIssue;
     }
 
-    async fetchIssue(projectId, issueId) {
-        const cacheKey = `${projectId}/${issueId}`;
+    async fetchIssue(groupId, projectId, issueId) {
+        const cacheKey = `${groupId}/${projectId}/${issueId}`;
         
         // Return cached issue if available
         if (this.freshCache.has(cacheKey)) {
@@ -63,10 +63,15 @@ export class GitLabService {
         }
 
         // Add to pending issues
-        if (!this.pendingIssues.has(projectId)) {
-            this.pendingIssues.set(projectId, new Set());
+        if (!this.pendingIssues.has(groupId)) {
+            console.log(`Adding group ${groupId} to pending issues`);
+            this.pendingIssues.set(groupId, new Map());
         }
-        this.pendingIssues.get(projectId).add(issueId);
+        const projectMap = this.pendingIssues.get(groupId);
+        if (!projectMap.has(projectId)) {
+            projectMap.set(projectId, new Set());
+        }
+        projectMap.get(projectId).add(issueId);
 
         // Set up batch timeout if not already set
         if (!this.batchTimeout) {
@@ -86,7 +91,95 @@ export class GitLabService {
         });
     }
 
+    // ... existing constructor code ...
+
     async executeBatchFetch() {
+        this.batchTimeout = null;
+        const pendingIssues = new Map(this.pendingIssues);
+        this.pendingIssues.clear();
+
+        console.log('Executing batch fetch for pending issues:', pendingIssues);
+
+        try {
+            const groupIds = Array.from(pendingIssues.keys());
+            console.log('Fetching paths for group IDs:', groupIds);
+
+            // Prepare the GraphQL query
+            const issueSelections = Array.from(pendingIssues.entries()).map(([groupId, projectMap]) => {
+                return Array.from(projectMap.entries()).map(([projectId, issueIds]) => {
+                    const projectPath = `${groupId}/${projectId}`;
+                    console.log(`Building query for project ${projectId} with path ${projectPath}`);
+                    
+                    if (!projectPath) {
+                        console.error(`No project path found for ID: ${projectId}`);
+                        throw new Error(`Could not find project path for ID: ${projectId}`);
+                    }
+    
+                    const issueFilters = Array.from(issueIds).map(iid => `"${iid}"`).join(', ');
+                    return `
+                        ${groupId}__${projectId}: project(fullPath: "${projectPath}") {
+                            issues(first: ${issueIds.size}, iids: [${issueFilters}]) {
+                                nodes {
+                                    iid
+                                    title
+                                    webUrl
+                                    state
+                                    updatedAt
+                                }
+                            }
+                        }
+                    `;
+                });
+            });
+
+            const query = `
+                query {
+                    ${issueSelections.join('\n')}
+                }
+            `;
+
+            console.log('Final GraphQL query:', query);
+
+            const response = await window.$http.post('/api/gitlab/graphql', {
+                query: query
+            });
+
+            console.log('GraphQL response:', response.data);
+
+            // Process and cache the results
+            if (response.data.data) {
+                Object.entries(response.data.data).forEach(([projectKey, projectData]) => {
+                    const [groupId, projectId] = projectKey.split('__');
+                    console.log(`Processing results for group ${groupId} and project ${projectId}:`, projectData);
+                    
+                    projectData.issues.nodes.forEach(issue => {
+                        const cacheKey = `${groupId}/${projectId}/${issue.iid}`;
+                        this.cache.set(cacheKey, {
+                            iid: issue.iid,
+                            title: issue.title,
+                            web_url: issue.webUrl,
+                            state: issue.state,
+                            updated_at: issue.updatedAt,
+                            project_id: projectId
+                        });
+                        this.freshCache.set(cacheKey, this.cache.get(cacheKey));
+                    });
+                });
+                this.saveCacheToStorage();
+            } else {
+                console.warn('No data found in GraphQL response');
+            }
+        } catch (error) {
+            console.error('Error in executeBatchFetch:', {
+                error,
+                message: error.message,
+                response: error.response?.data
+            });
+            throw error;
+        }
+    }
+
+    async executeBatchFetchRestApi() {
         this.batchTimeout = null;
         const pendingIssues = new Map(this.pendingIssues);
         this.pendingIssues.clear();

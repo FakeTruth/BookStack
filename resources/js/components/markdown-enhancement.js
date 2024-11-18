@@ -14,6 +14,21 @@ export class MarkdownEnhancement {
         await this.enhanceGitLabReferences();
     }
 
+    createIssueReference(groupId, projectId, issueId, issue, showProjectIds) {
+        const referenceHtml = `
+        <span class="gitlab-issue-reference">
+        <span class="gitlab-issue-card">
+            <span class="issue-title">
+                <a href="${issue.web_url}" target="_blank" rel="noopener">
+                    <svg style="margin: 0;" class="svg-icon" data-icon="copy" role="presentation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z"></path></svg>
+                    ${showProjectIds ? `${issue.project_id}` : ''}#${issue.iid} · ${issue.title}
+                </a>
+            </span>
+            <span class="issue-meta">
+                <span class="status ${issue.state}"><span class="status-text">${issue.state}</span></span></span></span></span>`;
+        return referenceHtml;
+    }
+
     async enhanceGitLabReferences() {
         // Find all GitLab issue references in the format: gitlab#projectId/issueId
         const issueRefs = document.querySelectorAll('.page-content p, .page-content li, .page-content td, .comment-box .content p, .comment-box .content li, .comment-box .content td');
@@ -21,12 +36,15 @@ export class MarkdownEnhancement {
         // First pass: collect all references and add loading indicators
         const enhancements = [];
         for (const element of issueRefs) {
-            const matches = element.innerHTML.match(/gitlab#(\d+)\/(\d+)/g);
+            // Match "group/projectId#issueId"
+            const matches = element.innerHTML.match(/(\w+)\/(\w+)\#(\d+)/g);
+            //const matches = element.innerHTML.match(/gitlab#(\d+)\/(\d+)/g);
             if (!matches) continue;
 
             for (const match of matches) {
-                const [projectId, issueId] = match.replace('gitlab#', '').split('/');
-                const issue = this.gitlab.fetchIssueFromCache(projectId, issueId);
+                const [groupId, projectId, issueId] = match.split(/\/|\#/g);
+                console.log(`Fetching issue ${groupId}/${projectId}/${issueId}`);
+                const issue = this.gitlab.fetchIssueFromCache(groupId, projectId, issueId);
                 let loadingHtml = '';
                 if (!issue) {
                     loadingHtml = `
@@ -38,20 +56,14 @@ export class MarkdownEnhancement {
                     </span>
                     </span>`;
                 } else {
-                    loadingHtml = `
-                    <span class="gitlab-issue-reference">
-                    <span class="gitlab-issue-card">
-                        <span class="issue-title">
-                        ${issue.title}
-                        </span>
-                    </span>
-                    </span>`;
+                    loadingHtml = this.createIssueReference(groupId, projectId, issueId, issue, false);
                 }   
                 element.innerHTML = element.innerHTML.replace(match, loadingHtml);
                 
                 // Store the enhancement info for later
                 enhancements.push({
                     element,
+                    groupId,
                     projectId,
                     issueId,
                     loadingHtml,
@@ -59,30 +71,25 @@ export class MarkdownEnhancement {
             }
         }
 
+        // Track unique project IDs
+        const uniqueProjectIds = new Set(enhancements.map(e => e.projectId));
+        const showProjectIds = uniqueProjectIds.size > 1;
+
+
         // Second pass: fetch all issues in parallel
-        const enhancePromises = enhancements.map(async ({ element, projectId, issueId, loadingHtml }) => {
+        const enhancePromises = enhancements.map(async ({ element, groupId, projectId, issueId, loadingHtml }) => {
             try {
-                const issue = await this.gitlab.fetchIssue(projectId, issueId);
+                const issue = await this.gitlab.fetchIssue(groupId, projectId, issueId);
                 if (!issue) {
                     throw new Error('Issue not found');
                 }
 
                 // Create enhancement HTML
-                const enhancement = document.createElement('span');
-                enhancement.className = 'gitlab-issue-reference';
-                enhancement.innerHTML = `
-                    <span class="gitlab-issue-card">
-                        <span class="issue-title">
-                            <a href="${issue.web_url}" target="_blank" rel="noopener">
-                                #${issue.iid}: ${issue.title}
-                            </a>
-                        </span>
-                        <span class="issue-meta">
-                            <span class="status ${issue.state}"><span class="status-text">${issue.state}</span></span><!--<span class="updated">Updated: ${new Date(issue.updated_at).toLocaleDateString()}</span>--></span></span>`;
+                const referenceHtml = this.createIssueReference(groupId, projectId, issueId, issue, showProjectIds);
 
                 element.innerHTML = element.innerHTML.replace(
                     loadingHtml,
-                    enhancement.outerHTML
+                    referenceHtml
                 );
             } catch (error) {
                 console.error('Failed to load GitLab issue:', error);

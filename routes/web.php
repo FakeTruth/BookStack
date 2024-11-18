@@ -297,6 +297,8 @@ Route::middleware('auth')->group(function () {
         ->middleware(['auth']);
     Route::get('/api/gitlab/issues', [GitLabApiController::class, 'getIssues'])
         ->middleware(['auth']);
+    Route::post('/api/gitlab/graphql', [GitLabApiController::class, 'graphql'])
+        ->middleware(['auth']);
 });
 
 // MFA routes
