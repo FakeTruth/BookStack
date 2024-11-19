@@ -18,14 +18,14 @@ class GitLabApiController extends ApiController
         // Get project and issue IDs from query parameters
         $projectId = $request->query('project_id');
         $issueIds = $request->query('iids', []);
-        
+
         if (empty($projectId) || empty($issueIds)) {
             return $this->jsonError('Project ID and issue IDs required', 400);
         }
 
         try {
             $gitlabUrl = config('gitlablinks.gitlab_url');
-            
+
             // Build the request
             $request = Http::withToken($token);
 
@@ -104,4 +104,4 @@ class GitLabApiController extends ApiController
             return $this->jsonError('Failed to execute GraphQL query: ' . $e->getMessage(), 500);
         }
     }
-} 
+}
