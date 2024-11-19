@@ -17,7 +17,6 @@ use BookStack\Users\Controllers as UserControllers;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Support\Facades\Route;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-use BookStack\Access\Controllers\OidcTokenController;
 use BookStack\Http\Controllers\Api\GitLabApiController;
 
 Route::get('/status', [SettingControllers\StatusController::class, 'show']);
@@ -289,12 +288,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings/{category}', [SettingControllers\SettingController::class, 'category'])->name('settings.category');
     Route::post('/settings/{category}', [SettingControllers\SettingController::class, 'update']);
 
-    // OIDC Routes
-    Route::get('/api/oidc/token', [OidcTokenController::class, 'getToken'])
-        ->middleware(['auth']);
-
-    Route::get('/api/gitlab/projects/{projectId}/issues/{issueId}', [GitLabApiController::class, 'getIssue'])
-        ->middleware(['auth']);
+    // GitLab Routes
     Route::get('/api/gitlab/issues', [GitLabApiController::class, 'getIssues'])
         ->middleware(['auth']);
     Route::post('/api/gitlab/graphql', [GitLabApiController::class, 'graphql'])

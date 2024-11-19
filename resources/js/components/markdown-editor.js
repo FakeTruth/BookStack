@@ -48,7 +48,6 @@ export class MarkdownEditor extends Component {
             displayEl: this.display,
             cmEditorView: this.editor.cm,
         });
-        window.markdownEnhancement.init();
     }
 
     setupListeners() {

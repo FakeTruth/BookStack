@@ -35,14 +35,13 @@ window.$components.init();
 
 // Then add our markdown enhancement
 window.$markdownEnhancement = new MarkdownEnhancement();
-window.markdownEnhancement = new MarkdownEnhancement();
 
 // Add to the ready function
 window.addEventListener('load', () => {
-    console.log('Initialising markdown enhancement');
     window.$markdownEnhancement.init();
 });
 
+// Listen for markdown editor changes
 window.$events.listen('editor-html-change', () => {
     window.$markdownEnhancement.init();
 });
