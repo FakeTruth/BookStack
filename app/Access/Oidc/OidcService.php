@@ -178,8 +178,7 @@ class OidcService
         session()->put("oidc_id_token", $idTokenText);
 
         // Store GitLab access token if available
-        \Log::info('OIDC access token', ['token' => $accessToken->getToken()]);
-        session()->put('gitlab_access_token', $accessToken->getToken());
+        session()->put('oidc_access_token', $accessToken->getToken());
 
         $returnClaims = Theme::dispatch(ThemeEvents::OIDC_ID_TOKEN_PRE_VALIDATE, $idToken->getAllClaims(), [
             'access_token' => $accessToken->getToken(),

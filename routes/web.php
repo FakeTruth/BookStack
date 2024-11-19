@@ -289,10 +289,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/settings/{category}', [SettingControllers\SettingController::class, 'update']);
 
     // GitLab Routes
-    Route::get('/api/gitlab/issues', [GitLabApiController::class, 'getIssues'])
-        ->middleware(['auth']);
-    Route::post('/api/gitlab/graphql', [GitLabApiController::class, 'graphql'])
-        ->middleware(['auth']);
+    Route::post('/api/gitlab/graphql', [GitLabApiController::class, 'graphql']);
 });
 
 // MFA routes

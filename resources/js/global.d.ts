@@ -9,7 +9,7 @@ declare global {
 
     interface Window {
         $components: ComponentStore;
-        $events: EventManager;  
+        $events: EventManager;
         $trans: Translator;
         $http: HttpManager;
         $markdownEnhancement: MarkdownEnhancement;
