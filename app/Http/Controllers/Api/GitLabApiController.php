@@ -24,7 +24,7 @@ class GitLabApiController extends ApiController
         }
 
         try {
-            $gitlabUrl = config('services.gitlab.url', 'https://gitlab.com');
+            $gitlabUrl = config('gitlablinks.gitlab_url');
             
             // Build the request
             $request = Http::withToken($token);
@@ -65,7 +65,7 @@ class GitLabApiController extends ApiController
         }
 
         try {
-            $gitlabUrl = config('services.gitlab.url', 'https://gitlab.com');
+            $gitlabUrl = config('gitlablinks.gitlab_url');
             $graphqlEndpoint = "{$gitlabUrl}/api/graphql";
 
             // Validate request body contains GraphQL query
