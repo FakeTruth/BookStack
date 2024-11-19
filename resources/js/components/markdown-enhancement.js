@@ -31,7 +31,12 @@ export class MarkdownEnhancement {
 
     async enhanceGitLabReferences() {
         // Find all GitLab issue references in the format: gitlab#projectId/issueId
-        const issueRefs = document.querySelectorAll('.page-content p, .page-content li, .page-content td, .comment-box .content p, .comment-box .content li, .comment-box .content td');
+        let issueRefs = document.querySelectorAll('.page-content body, .page-content p, .page-content li, .page-content td, .comment-box .content p, .comment-box .content li, .comment-box .content td');
+        const markdownFrames = document.querySelectorAll('.markdown-display');
+        if (markdownFrames.length > 0) {
+            const markdownIssueRefs = markdownFrames[0].contentWindow.document.querySelectorAll("li");
+            issueRefs = [...issueRefs, ...markdownIssueRefs];   
+        }
         
         // First pass: collect all references and add loading indicators
         const enhancements = [];

@@ -33,13 +33,16 @@ window.$components = new ComponentStore();
 window.$components.register(componentMap);
 window.$components.init();
 
-// Initialize components object if it doesn't exist
-window.components = window.components || {};
-
 // Then add our markdown enhancement
-window.components.markdownEnhancement = new MarkdownEnhancement();
+window.$markdownEnhancement = new MarkdownEnhancement();
+window.markdownEnhancement = new MarkdownEnhancement();
 
 // Add to the ready function
 window.addEventListener('load', () => {
-    window.components.markdownEnhancement.init();
+    console.log('Initialising markdown enhancement');
+    window.$markdownEnhancement.init();
+});
+
+window.$events.listen('editor-html-change', () => {
+    window.$markdownEnhancement.init();
 });

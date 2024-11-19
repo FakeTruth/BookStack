@@ -38,6 +38,7 @@ export class MarkdownEditor extends Component {
             this.emitEditorEvents();
             this.scrollToTextIfNeeded();
             this.editor.actions.updateAndRender();
+            window.markdownEnhancement.init();
         });
     }
 
@@ -47,6 +48,7 @@ export class MarkdownEditor extends Component {
             displayEl: this.display,
             cmEditorView: this.editor.cm,
         });
+        window.markdownEnhancement.init();
     }
 
     setupListeners() {
@@ -77,6 +79,7 @@ export class MarkdownEditor extends Component {
             }
 
             toolbarLabel.closest('.markdown-editor-wrap').classList.add('active');
+            window.markdownEnhancement.init();
         });
 
         this.handleDividerDrag();
@@ -114,6 +117,7 @@ export class MarkdownEditor extends Component {
         const scrollText = queryParams.get('content-text');
         if (scrollText) {
             this.editor.actions.scrollToText(scrollText);
+            window.markdownEnhancement.init();
         }
     }
 
