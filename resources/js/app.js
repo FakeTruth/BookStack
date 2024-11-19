@@ -3,7 +3,7 @@ import {HttpManager} from './services/http.ts';
 import {Translator} from './services/translations.ts';
 import * as componentMap from './components';
 import {ComponentStore} from './services/components.ts';
-import { MarkdownEnhancement } from './components/markdown-enhancement';
+import {MarkdownEnhancement} from './components/markdown-enhancement';
 
 // eslint-disable-next-line no-underscore-dangle
 window.__DEV__ = false;

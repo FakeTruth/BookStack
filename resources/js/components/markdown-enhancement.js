@@ -1,6 +1,7 @@
-import { GitLabService } from '../services/gitlab';
+import {GitLabService} from '../services/gitlab';
 
 export class MarkdownEnhancement {
+
     constructor() {
         this.gitlab = new GitLabService();
     }
@@ -34,21 +35,19 @@ export class MarkdownEnhancement {
         let issueRefs = document.querySelectorAll('.page-content body, .page-content p, .page-content li, .page-content td, .comment-box .content p, .comment-box .content li, .comment-box .content td');
         const markdownFrames = document.querySelectorAll('.markdown-display');
         if (markdownFrames.length > 0) {
-            const markdownIssueRefs = markdownFrames[0].contentWindow.document.querySelectorAll("li");
-            issueRefs = [...issueRefs, ...markdownIssueRefs];   
+            const markdownIssueRefs = markdownFrames[0].contentWindow.document.querySelectorAll('li');
+            issueRefs = [...issueRefs, ...markdownIssueRefs];
         }
-        
+
         // First pass: collect all references and add loading indicators
         const enhancements = [];
         for (const element of issueRefs) {
             // Match "group/projectId#issueId"
-            const matches = element.innerHTML.match(/(\w+)\/(\w+)\#(\d+)/g);
-            //const matches = element.innerHTML.match(/gitlab#(\d+)\/(\d+)/g);
+            const matches = element.innerHTML.match(/(\w+)\/(\w+)#(\d+)/g);
             if (!matches) continue;
 
             for (const match of matches) {
-                const [groupId, projectId, issueId] = match.split(/\/|\#/g);
-                console.log(`Fetching issue ${groupId}/${projectId}/${issueId}`);
+                const [groupId, projectId, issueId] = match.split(/\/|#/g);
                 const issue = this.gitlab.fetchIssueFromCache(groupId, projectId, issueId);
                 let loadingHtml = '';
                 if (!issue) {
@@ -62,9 +61,9 @@ export class MarkdownEnhancement {
                     </span>`;
                 } else {
                     loadingHtml = this.createIssueReference(groupId, projectId, issueId, issue, false);
-                }   
+                }
                 element.innerHTML = element.innerHTML.replace(match, loadingHtml);
-                
+
                 // Store the enhancement info for later
                 enhancements.push({
                     element,
@@ -80,9 +79,10 @@ export class MarkdownEnhancement {
         const uniqueProjectIds = new Set(enhancements.map(e => e.projectId));
         const showProjectIds = uniqueProjectIds.size > 1;
 
-
         // Second pass: fetch all issues in parallel
-        const enhancePromises = enhancements.map(async ({ element, groupId, projectId, issueId, loadingHtml }) => {
+        const enhancePromises = enhancements.map(async ({
+            element, groupId, projectId, issueId, loadingHtml,
+        }) => {
             try {
                 const issue = await this.gitlab.fetchIssue(groupId, projectId, issueId);
                 if (!issue) {
@@ -90,17 +90,20 @@ export class MarkdownEnhancement {
                 }
 
                 // Create enhancement HTML
-                const referenceHtml = this.createIssueReference(groupId, projectId, issueId, issue, showProjectIds);
-
-                element.innerHTML = element.innerHTML.replace(
-                    loadingHtml,
-                    referenceHtml
+                const referenceHtml = this.createIssueReference(
+                    groupId,
+                    projectId,
+                    issueId,
+                    issue,
+                    showProjectIds,
                 );
+
+                element.innerHTML = element.innerHTML.replace(loadingHtml, referenceHtml);
             } catch (error) {
                 console.error('Failed to load GitLab issue:', error);
                 element.innerHTML = element.innerHTML.replace(
                     loadingHtml,
-                    `<span class="gitlab-error">Failed to load issue ${projectId}/${issueId}</span>`
+                    `<span class="gitlab-error">Failed to load issue ${projectId}/${issueId}</span>`,
                 );
             }
         });
@@ -108,4 +111,5 @@ export class MarkdownEnhancement {
         // Wait for all enhancements to complete
         await Promise.all(enhancePromises);
     }
+
 }
