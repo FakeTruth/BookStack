@@ -42,6 +42,8 @@ window.addEventListener('load', () => {
 });
 
 // Listen for markdown editor changes
-window.$events.listen('editor-html-change', () => {
-    window.$markdownEnhancement.init();
+window.$events.listen('editor-markdown-change', async () => {
+    // Yield here so markdown editor has time to load
+    await new Promise(resolve => { setTimeout(resolve, 0); });
+    await window.$markdownEnhancement.init();
 });

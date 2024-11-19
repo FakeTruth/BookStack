@@ -11,10 +11,6 @@ export class GitLabService {
         this.loadCacheFromStorage();
     }
 
-    async init() {
-        return true;
-    }
-
     loadCacheFromStorage() {
         try {
             const cached = localStorage.getItem(this.CACHE_KEY);
@@ -91,12 +87,14 @@ export class GitLabService {
         });
     }
 
-    // ... existing constructor code ...
-
     async executeBatchFetch() {
         this.batchTimeout = null;
         const pendingIssues = new Map(this.pendingIssues);
         this.pendingIssues.clear();
+
+        if (pendingIssues.size === 0) {
+            return;
+        }
 
         try {
             // Prepare the GraphQL query
@@ -140,23 +138,45 @@ export class GitLabService {
             if (response.data.data) {
                 Object.entries(response.data.data).forEach(([projectKey, projectData]) => {
                     const [groupId, projectId] = projectKey.split('__');
-
-                    projectData.issues.nodes.forEach(issue => {
-                        const cacheKey = `${groupId}/${projectId}/${issue.iid}`;
-                        this.cache.set(cacheKey, {
-                            iid: issue.iid,
-                            title: issue.title,
-                            web_url: issue.webUrl,
-                            state: issue.state,
-                            updated_at: issue.updatedAt,
-                            project_id: projectId,
+                    if (projectData) {
+                        projectData.issues.nodes.forEach(issue => {
+                            const cacheKey = `${groupId}/${projectId}/${issue.iid}`;
+                            this.cache.set(cacheKey, {
+                                iid: issue.iid,
+                                title: issue.title,
+                                web_url: issue.webUrl,
+                                state: issue.state,
+                                updated_at: issue.updatedAt,
+                                project_id: projectId,
+                            });
+                            this.freshCache.set(cacheKey, this.cache.get(cacheKey));
                         });
-                        this.freshCache.set(cacheKey, this.cache.get(cacheKey));
-                    });
+                    }
                 });
                 this.saveCacheToStorage();
             } else {
                 console.warn('No data found in GraphQL response');
+            }
+
+            // For all pendingIssues which didn't get a reply, set them to error
+            for (const [groupId, projectMap] of pendingIssues) {
+                for (const [projectId, issueIds] of projectMap) {
+                    for (const issueId of issueIds) {
+                        const cacheKey = `${groupId}/${projectId}/${issueId}`;
+                        // Check if cacheKey exists, if not add it
+                        if (!this.freshCache.has(cacheKey)) {
+                            this.cache.set(cacheKey, {
+                                iid: issueId,
+                                title: 'Not found',
+                                web_url: null,
+                                state: null,
+                                updated_at: null,
+                                project_id: projectId,
+                            });
+                            this.freshCache.set(cacheKey, this.cache.get(cacheKey));
+                        }
+                    }
+                }
             }
         } catch (error) {
             console.error('Error in executeBatchFetch:', {
