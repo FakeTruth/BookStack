@@ -3,6 +3,7 @@ import {HttpManager} from './services/http.ts';
 import {Translator} from './services/translations.ts';
 import * as componentMap from './components';
 import {ComponentStore} from './services/components.ts';
+import { MarkdownEnhancement } from './components/markdown-enhancement';
 
 // eslint-disable-next-line no-underscore-dangle
 window.__DEV__ = false;
@@ -31,3 +32,14 @@ window.$trans = new Translator();
 window.$components = new ComponentStore();
 window.$components.register(componentMap);
 window.$components.init();
+
+// Initialize components object if it doesn't exist
+window.components = window.components || {};
+
+// Then add our markdown enhancement
+window.components.markdownEnhancement = new MarkdownEnhancement();
+
+// Add to the ready function
+window.addEventListener('load', () => {
+    window.components.markdownEnhancement.init();
+});
