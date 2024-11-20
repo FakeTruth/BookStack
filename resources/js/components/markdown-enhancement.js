@@ -22,16 +22,14 @@ export class MarkdownEnhancement {
             target = '_blank';
         }
         const referenceHtml = `
-        <span class="gitlab-issue-reference">
         <span class="gitlab-issue-card">
+            <svg style="margin: 0;" class="svg-icon gitlab-svg" data-icon="copy" role="presentation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z"></path></svg>
             <span class="issue-title">
                 <a href="${url}" target="${target}" rel="noopener">
-                    <svg style="margin: 0;" class="svg-icon" data-icon="copy" role="presentation" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2m0 16H8V7h11z"></path></svg>
                     ${cardText}
                 </a>
             </span>
-            <span class="issue-meta">
-                <span class="status ${state}"><span class="status-text">${state}</span></span></span></span></span>`;
+            <span class="gitlab-status ${state}"><span class="status-text">${state}</span></span></span>`;
         return referenceHtml;
     }
 
